@@ -1,4 +1,4 @@
-<img width="430" height="616" alt="architecture1" src="https://github.com/user-attachments/assets/108603bf-cf70-42ec-81a7-418e516d601d" /># encoder-decoder
+encoder-decoder
 
 # BERT, GPT and BART from Scratch
 
