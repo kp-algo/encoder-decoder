@@ -1,6 +1,4 @@
-encoder-decoder
-
-# BERT, GPT and BART from Scratch
+# Transformers From Scratch
 
 Small character-level BERT-, GPT- and BART-style Transformers implemented from scratch in PyTorch on Tiny Shakespeare, to understand how encoder-only, decoder-only and encoder-decoder architectures differ in practice.
 
