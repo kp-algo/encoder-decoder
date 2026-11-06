@@ -1,21 +1,25 @@
 # Transformers From Scratch
 
-Small character-level BERT-, GPT- and BART-style Transformers implemented from scratch in PyTorch on Tiny Shakespeare, to understand how encoder-only, decoder-only and encoder-decoder architectures differ in practice.
+Transformers are a class of neural network built around self-attention. This repo implements three kinds from scratch in PyTorch (encoder-decoder, decoder-only and encoder-only) to see how they differ in practice.
 
-## How I Used Andrej Karpathy's Work
+## Approach
 
-I started from Andrej Karpathy's [char-rnn](https://github.com/karpathy/char-rnn) dataset and his "Let's build GPT" lecture, and reused his overall approach: character-level tokenization, a `Head` / `MultiHead` / `FeedForward` / block structure with pre-LayerNorm and residual connections, the `get_batch` and `estimate_loss` pattern, and the AdamW training loop.
+I extended Andrej Karpathy's approach from [char-rnn](https://github.com/karpathy/char-rnn) and his "Let's build GPT" lecture, and implemented three types of Transformers from scratch:
+- **Encoder-decoder** (BART-style)
+- **Decoder-only** (GPT-style)
+- **Encoder-only** (BERT-style)
 
-On top of that foundation I extended the code myself:
-- Added a switch for **causal vs. bidirectional** attention, giving the GPT (decoder-only) and BERT (encoder-only) variants.
-- Added **cross-attention** (keys and values from the encoder output) to build a decoder block.
-- Combined an encoder stack and a decoder stack into a **BART-style encoder-decoder**, with its own batch function (source window, shifted target window).
-- Adapted the sampling loop for the encoder-decoder (temperature and top-k); this part was written with AI assistance.
+## Workflow
+
+* **Datasets:** Tiny Shakespeare (character-level baseline) and TinyStories (subword tokens)
+* **Tokenization:** BPE (Byte Pair Encoding), trained with Hugging Face `tokenizers` on the TinyStories training split
+* **Data split:** train/validation splits, with `get_batch` sampling random windows from each split for every model
+* **Models:** `Head` / `MultiHead` / `FeedForward` / block structure with pre-LayerNorm and residual connections
+* **Training and evaluation:** AdamW training loop and the `estimate_loss` pattern
 
 ## Architecture
 
-![Architecture diagram 1](architecture1.jpg)
-![Architecture diagram 2](architecture2.jpg)
+![Architecture](Architecture.png)
 
 ## Components
 
@@ -28,21 +32,36 @@ On top of that foundation I extended the code myself:
 | `DecoderBlock` | Causal self-attention + cross-attention + feed-forward |
 | `BART` | Encoder + decoder stacks, embeddings, LM head, `generate` |
 | `GPT` | Decoder-only causal stack |
+| `BERT` | Bidirectional stack trained to recover randomly masked tokens |
 
 ## Results
 
-Tiny Shakespeare, 90/10 split, `n_embd=192`, 4 heads, 3 layers, dropout 0.2, AdamW at 3e-4, 5000 steps.
+### Experiment 1: Tiny Shakespeare (character-level)
+
+90/10 split, `n_embd=192`, 4 heads, dropout 0.2, AdamW at 3e-4, 5000 steps. Loss is cross-entropy per character (an untrained model starts at about 4.32, close to ln 65 ≈ 4.17).
 
 | Model | Parameters | Train loss | Val loss |
 |---|---|---|---|
 | BART-style encoder-decoder (predict next 128 chars from previous 128) | 3.16M | 1.490 | 1.686 |
-| GPT-style decoder-only | 3.38M  | 1.486 | 1.672 |
+| GPT-style decoder-only | 3.38M | 1.486 | 1.672 |
 | BERT-style encoder-only | TBD | TBD | TBD |
 
-Loss is cross-entropy per character, starting from about 4.32 (ln 65 ≈ 4.17). The generated text has Shakespeare-like structure but mostly pseudo-words, which is expected at this scale. GPT and BERT results are still pending, and their losses won't be directly comparable because the training objectives differ.
+The generated text has Shakespeare-like structure but mostly pseudo-words, which is expected at this scale. The BART and GPT results are within 0.02 of each other from a single seed each, so I don't claim a difference between them. BERT will be reported as masked-token accuracy, since its objective differs and its loss isn't comparable.
+
+### Experiment 2: TinyStories (BPE, 3,000 tokens)
+
+Same architecture settings. Loss is cross-entropy per token, so it is not comparable with Experiment 1.
+
+| Model | Parameters | Train loss | Val loss |
+|---|---|---|---|
+| BART-style encoder-decoder | ~7.4 M | 1.931 | 2.019 |
+| GPT-style decoder-only | TBD | TBD | TBD |
+| BERT-style encoder-only | TBD | TBD | TBD |
+
+All three models are being retrained from scratch with identical settings for this table.
 
 ## Next Steps
 
 1. **KV cache in `generate`**: cache keys and values so each new token no longer recomputes attention over the whole sequence, then measure the speedup.
-2. **Change the dataset**: move from Tiny Shakespeare to a larger, more useful dataset with a task that benefits from an encoder (for example summarization).
-3. **Proper tokenization**: replace character-level tokens with a subword tokenizer (BPE).
+2. **Complete the TinyStories comparison**: retrain all three models from scratch with a warmup and cosine learning-rate schedule, report bits per character, and run several seeds.
+3. **BART denoising objective**: train the encoder-decoder to reconstruct corrupted text instead of only continuing it.
