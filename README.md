@@ -54,9 +54,9 @@ Same architecture settings. Loss is cross-entropy per token, so it is not compar
 
 | Model | Parameters | Train loss | Val loss |
 |---|---|---|---|
-| BART-style encoder-decoder | ~7.4 M | 1.931 | 2.019 |
-| GPT-style decoder-only | TBD | TBD | TBD |
-| BERT-style encoder-only | TBD | TBD | TBD |
+| BART-style encoder-decoder | 4.29 M | 2.087 | 2.188 |
+| GPT-style decoder-only | 3.84 M | 2.084 | 2.194 |
+| BERT-style encoder-only | 3.84 M | 1.842 | 1.910 |
 
 All three models are being retrained from scratch with identical settings for this table.
 
